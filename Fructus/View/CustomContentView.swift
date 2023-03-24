@@ -3,43 +3,83 @@ import SwiftUI
 
 struct CustomContentView: View {
     var body: some View {
-        TabView {
-            Text("Página 1")
-                .font(.largeTitle)
-                .foregroundColor(.white)
-                .background(Color.blue)
-            Text("Página 2")
-                .font(.largeTitle)
-                .foregroundColor(.white)
-                .background(Color.green)
-            Text("Página 3")
-                .font(.largeTitle)
-                .foregroundColor(.white)
-                .background(Color.orange)
-        }
-        .tabViewStyle(PageTabViewStyle())
-        .indexViewStyle(CustomPageIndexViewStyle(circleColor: .red))
+        Home()
     }
 }
 
-struct CustomPageIndexViewStyle: PageIndexViewStyle {
-    let circleColor: Color
+struct Home: View {
+    var colors: [Color] = [.red, .blue, .pink, .purple, .orange, .green]
     
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 10) {
-            ForEach(0..<configuration.pages.count) { index in
-                Circle()
-                    .foregroundColor(configuration.currentPageIndex == index ? circleColor : .gray)
-                    .frame(width: 8, height: 8)
-                    .scaleEffect(configuration.currentPageIndex == index ? 1.4 : 1.0)
-                    .animation(.spring())
+    @State var offset: CGFloat = 0
+    
+    var body: some View {
+        ScrollView(.init()) {
+            TabView {
+                ForEach(colors.indices, id: \.self) { index in
+                    if index == 0 {
+                        colors[index]
+                            .overlay(
+                                GeometryReader { proxy -> Color in
+                                    let minX = proxy.frame(in: .global).minX
+
+                                    //print(minX)
+
+                                    DispatchQueue.main.async {
+                                        withAnimation(.default) {
+                                            self.offset = minX
+                                        }
+                                    }
+
+                                    print(self.offset)
+
+                                    return Color.clear
+                                }
+                                    .frame(
+                                        width: 0,
+                                        height: 0
+                                    ),
+                                alignment: .leading
+                            )
+                    } else {
+                        colors[index]
+                    }
+                }
             }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .overlay(
+                // Animated Indicators...
+                HStack(spacing: 15) {
+                    ForEach(colors.indices, id: \.self) { index in
+                        Capsule()
+                            .fill(Color.white)
+                            .frame(width: getIndex() == index ? 20 : 7, height: 7)
+                    }
+                }
+                    .padding(
+                        .bottom
+                        ,UIApplication.shared.windows.first?.safeAreaInsets.bottom
+                    )
+                    .padding(.bottom, 100),
+                alignment: .bottom
+            )
         }
+        .ignoresSafeArea()
+    }
+    
+    func getIndex() -> Int {
+        return Int(round(Double(offset / getWidth())))
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
+extension View {
+    func getWidth() -> CGFloat {
+        let index = UIScreen.main.bounds.width
+        return index
+    }
+}
+
+struct CustomContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        CustomContentView()
     }
 }
